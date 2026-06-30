@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Secrets — KHÔNG BAO GIỜ commit
+secrets/
+*.tmp
+.yt_pw.tmp
+*_cookies*.json
+*_cookies*.txt
+*cookies_netscape*
+*.session
+.env
+.env.*
+
+# Runtime state / profile (chứa cookie login)
+*-profile/
+yt-forever-profile/
+state/rate_state.json
+crawl-data/
+logs/
+screenshots/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
