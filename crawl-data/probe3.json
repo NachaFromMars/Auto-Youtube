@@ -1,0 +1,23 @@
+{
+  "rows": 1,
+  "links": [
+    {
+      "href": "https://studio.youtube.com/video/lealmted3Zw/edit",
+      "txt": "1:00",
+      "parent": "YTCP-VE",
+      "cls": "remove-default-style style-scope ytcp-vi"
+    },
+    {
+      "href": "https://studio.youtube.com/video/lealmted3Zw/edit",
+      "txt": "Thiền Định Tọa Sen — 60 Giây An Trú Giữa Hồ Sen 🧘🪷",
+      "parent": "YTCP-VE",
+      "cls": "remove-default-style style-scope ytcp-vi"
+    },
+    {
+      "href": "https://studio.youtube.com/video/lealmted3Zw/comments",
+      "txt": "0",
+      "parent": "DIV",
+      "cls": "remove-default-style comments-link style"
+    }
+  ]
+}
