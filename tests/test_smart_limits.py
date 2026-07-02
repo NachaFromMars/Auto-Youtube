@@ -73,3 +73,36 @@ def test_limit_can_upload_shape():
 if __name__ == "__main__":
     import subprocess
     raise SystemExit(subprocess.call(["python3", "-m", "pytest", "-q", __file__]))
+
+
+# ---- v1.1: optimizer tests ----
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), "..", "agent-harness", "cli_anything"))
+from auto_youtube.core import optimizer  # noqa: E402
+
+
+def test_best_time_shapes():
+    r = optimizer.best_time("short")
+    assert r["kind"] == "short"
+    assert isinstance(r["golden_hours_vn"], list) and r["golden_hours_vn"]
+    assert r["day_type"] in ("weekday", "weekend")
+
+
+def test_next_slot_future():
+    from datetime import datetime
+    r = optimizer.next_slot("long")
+    assert r["slot_vn"] is not None
+    assert datetime.fromisoformat(r["slot_vn"]) > datetime.now()
+
+
+def test_optimize_seo_short_adds_shorts_hashtag():
+    r = optimizer.optimize_seo("Thiền buổi sáng", "nhạc thiền", ["thiền"], is_short=True)
+    assert "#Shorts" in r["hashtags"]
+    assert "#Shorts" in r["description"] or "#shorts" in r["description"].lower()
+    assert r["next_slot"]["slot_vn"]
+
+
+def test_optimize_seo_no_duplicate_hashtags():
+    desc = "đã có #thiền rồi"
+    r = optimizer.optimize_seo("Thiền tĩnh tâm", desc, [], is_short=False)
+    assert r["description"].lower().count("#thiền") == 1
