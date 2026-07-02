@@ -1,0 +1,16 @@
+{
+  "url": "https://studio.youtube.com/channel/UCQOb70ar5EgoD4rtIjvS0fg/videos/upload?filter=%5B%5D&sort=%7B%22c",
+  "ytcp-video-row": 0,
+  "ytcp-video-list-cell-video": 0,
+  "#video-list ytcp-video-row": 0,
+  "ytcp-content-section": 1,
+  "tr": 0,
+  "[id*=video-list]": 6,
+  "_videoTags": [
+    "ytcp-video-section",
+    "ytcp-video-section-content",
+    "ytcp-video-filter",
+    "ytcp-video-bulk-actions",
+    "ytcp-upload-video-button"
+  ]
+}
