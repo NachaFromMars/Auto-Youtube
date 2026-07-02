@@ -60,13 +60,71 @@ def resume_controller():
                    capture_output=True, text=True)
 
 
-def _first(page, sels, timeout=8000):
-    """Trả locator đầu tiên match trong danh sách fallback."""
+def _fill_schedule(page, schedule_iso):
+    """Điền datepicker + time cho schedule. schedule_iso: 'YYYY-MM-DDTHH:MM' (giờ VN).
+    Studio hiển thị theo timezone account — account này đặt giờ VN."""
+    from datetime import datetime as _dt
+    try:
+        dt = _dt.fromisoformat(schedule_iso.replace("Z", ""))
+    except ValueError:
+        return {"ok": False, "reason": f"schedule_iso không hợp lệ: {schedule_iso}"}
+    date_str = dt.strftime("%d/%m/%Y")   # dạng phổ biến; fallback M/D/YYYY bên dưới
+    date_str_us = dt.strftime("%b %-d, %Y") if hasattr(dt, 'strftime') else date_str
+    time_str = dt.strftime("%H:%M")
+    out = {}
+    # 1) mở date dropdown
+    try:
+        trig = page.locator(
+            "#datepicker-trigger, ytcp-text-dropdown-trigger#datepicker-trigger").first
+        trig.wait_for(state="visible", timeout=8000)
+        trig.click()
+        page.wait_for_timeout(1200)
+        di = page.locator("tp-yt-paper-dialog input, ytcp-date-picker input").first
+        di.wait_for(state="visible", timeout=6000)
+        di.click()
+        page.keyboard.press("Control+A")
+        for fmt in (date_str_us, date_str):
+            try:
+                di.fill(fmt)
+                page.keyboard.press("Enter")
+                out["date"] = f"FILLED:{fmt}"
+                break
+            except Exception:
+                continue
+        page.wait_for_timeout(800)
+    except Exception as e:
+        out["date"] = f"FAIL:{str(e)[:80]}"
+    # 2) time input
+    try:
+        ti = page.locator(
+            "#time-of-day-trigger input, ytcp-form-input-container#time-of-day-container input, input#time-of-day").first
+        ti.wait_for(state="visible", timeout=6000)
+        ti.click()
+        page.wait_for_timeout(800)
+        # dropdown list giờ — chọn item khớp; fallback gõ trực tiếp
+        item = page.locator(f"tp-yt-paper-item:has-text('{time_str}')").first
+        try:
+            item.wait_for(state="visible", timeout=4000)
+            item.click()
+            out["time"] = f"PICKED:{time_str}"
+        except Exception:
+            page.keyboard.press("Control+A")
+            ti.fill(time_str)
+            page.keyboard.press("Enter")
+            out["time"] = f"TYPED:{time_str}"
+    except Exception as e:
+        out["time"] = f"FAIL:{str(e)[:80]}"
+    return out
+
+
+def _first(page, sels, timeout=8000, state="visible"):
+    """Trả locator đầu tiên match trong danh sách fallback.
+    state="attached" cho element ẩn (vd input[type=file] của YouTube)."""
     from playwright.sync_api import TimeoutError as PWTimeout
     for s in sels:
         try:
             loc = page.locator(s).first
-            loc.wait_for(state="visible", timeout=timeout)
+            loc.wait_for(state=state, timeout=timeout)
             return loc
         except Exception:
             continue
@@ -144,13 +202,24 @@ def upload(video_path, title, description="", tags=None, made_for_kids=None,
             hm.human_pause("load")
 
             # 2) chọn file
-            fi = _first(page, studio.SELECTORS["file_input"], timeout=12000)
+            fi = _first(page, studio.SELECTORS["file_input"], timeout=12000, state="attached")
             if not fi:
                 result.update({"stage": "file_input", "reason": "không thấy input file",
                                "shot": _shot(page, "no-file-input")})
                 ctx.close(); return result
             fi.set_input_files(video_path)
             hm.human_pause("load"); page.wait_for_timeout(6000)
+
+            # 2b) Thumbnail (long video; Shorts chỉ đổi được qua mobile app)
+            if thumbnail and os.path.exists(thumbnail) and not is_short:
+                try:
+                    ti = page.locator(
+                        "#file-loader input[type='file'], ytcp-thumbnail-uploader input[type='file']").first
+                    ti.wait_for(state="attached", timeout=15000)
+                    ti.set_input_files(thumbnail)
+                    hm.human_pause("between")
+                except Exception:
+                    _shot(page, "thumbnail-skip")
 
             # 3) Title
             tb = _first(page, studio.SELECTORS["title_box"], timeout=20000)
@@ -168,12 +237,30 @@ def upload(video_path, title, description="", tags=None, made_for_kids=None,
                     hm.human_type(page, db, description)
                     hm.human_pause("between")
 
-            # Audience (made for kids) — BẮT BUỘC chọn
+            # Audience (made for kids) — BẮT BUỘC chọn + VERIFY checked
+            # (bug học 02/07: click không ăn -> video rơi vào draft vì thiếu câu trả lời)
             key = "kids_yes" if mfk else "kids_no"
+            radio_name = "VIDEO_MADE_FOR_KIDS_MFK" if mfk else "VIDEO_MADE_FOR_KIDS_NOT_MFK"
             kb = _first(page, studio.SELECTORS[key], timeout=10000)
             if kb:
                 hm.human_click(page, kb, "audience")
                 hm.human_pause("between")
+            # verify + retry bằng JS click nếu chưa checked
+            for _ in range(3):
+                checked = page.evaluate(
+                    "(n)=>{const b=document.querySelector(`tp-yt-paper-radio-button[name='${n}']`);"
+                    "return b?(b.hasAttribute('checked')||b.getAttribute('aria-checked')==='true'):null;}",
+                    radio_name)
+                if checked:
+                    break
+                page.evaluate(
+                    "(n)=>{const b=document.querySelector(`tp-yt-paper-radio-button[name='${n}']`);"
+                    "if(b)b.click();}", radio_name)
+                page.wait_for_timeout(1500)
+            else:
+                result.update({"stage": "audience", "reason": "không set được made-for-kids radio",
+                               "shot": _shot(page, "audience-fail")})
+                ctx.close(); return result
 
             _shot(page, "details-filled")
 
@@ -189,12 +276,26 @@ def upload(video_path, title, description="", tags=None, made_for_kids=None,
                 sr = _first(page, studio.SELECTORS["schedule_radio"], timeout=8000)
                 if sr:
                     hm.human_click(page, sr, "schedule")
-                    # (datepicker fill chi tiết sẽ hoàn thiện khi crawl live)
+                    page.wait_for_timeout(1500)
+                    _fill_schedule(page, schedule_iso)
             else:
                 vkey = {"public": "vis_public", "unlisted": "vis_unlisted"}.get(vis, "vis_private")
+                vname = {"public": "PUBLIC", "unlisted": "UNLISTED"}.get(vis, "PRIVATE")
                 vb = _first(page, studio.SELECTORS[vkey], timeout=8000)
                 if vb:
                     hm.human_click(page, vb, f"vis-{vis}")
+                # verify + retry (cùng bài học audience radio)
+                for _ in range(3):
+                    vchecked = page.evaluate(
+                        "(n)=>{const b=document.querySelector(`tp-yt-paper-radio-button[name='${n}']`);"
+                        "return b?(b.hasAttribute('checked')||b.getAttribute('aria-checked')==='true'):null;}",
+                        vname)
+                    if vchecked:
+                        break
+                    page.evaluate(
+                        "(n)=>{const b=document.querySelector(`tp-yt-paper-radio-button[name='${n}']`);"
+                        "if(b)b.click();}", vname)
+                    page.wait_for_timeout(1500)
             hm.human_pause("think")
             _shot(page, "visibility-set")
 
