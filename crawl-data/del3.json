@@ -1,0 +1,62 @@
+[
+  {
+    "id": "",
+    "aria": "Get started"
+  },
+  {
+    "id": "",
+    "aria": "Dismiss"
+  },
+  {
+    "id": "",
+    "aria": "Collapse menu"
+  },
+  {
+    "id": "",
+    "aria": "Skip navigation"
+  },
+  {
+    "id": "",
+    "aria": "Search"
+  },
+  {
+    "id": "",
+    "aria": "Help"
+  },
+  {
+    "id": "",
+    "aria": "Ask Studio"
+  },
+  {
+    "id": "",
+    "aria": "Notifications"
+  },
+  {
+    "id": "",
+    "aria": "Create"
+  },
+  {
+    "id": "avatar-btn",
+    "aria": "Account"
+  },
+  {
+    "id": "",
+    "aria": "Undo changes"
+  },
+  {
+    "id": "",
+    "aria": "Save"
+  },
+  {
+    "id": "overflow-menu-button",
+    "aria": "Options"
+  },
+  {
+    "id": "select-button",
+    "aria": "Upload file"
+  },
+  {
+    "id": "select-button",
+    "aria": null
+  }
+]
