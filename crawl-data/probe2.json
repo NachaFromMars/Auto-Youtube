@@ -1,0 +1,42 @@
+{
+  "sectionText": "Edit Add to playlist More actions Video All videos uploaded to your channel Notices Any current or potential limitations to your video's reach, earnings or features Visibility How you set up who can view your videos Learn more Date The date on which you uploaded, scheduled or published your video Vi",
+  "tabs": [
+    {
+      "txt": "Inspiration",
+      "sel": "false"
+    },
+    {
+      "txt": "Videos",
+      "sel": "true"
+    },
+    {
+      "txt": "Shorts",
+      "sel": "false"
+    },
+    {
+      "txt": "Live",
+      "sel": "false"
+    },
+    {
+      "txt": "Posts",
+      "sel": "false"
+    },
+    {
+      "txt": "Playlists",
+      "sel": "false"
+    },
+    {
+      "txt": "Podcasts",
+      "sel": "false"
+    },
+    {
+      "txt": "Promotions",
+      "sel": "false"
+    },
+    {
+      "txt": "Collaborations",
+      "sel": "false"
+    }
+  ],
+  "videoLinks": []
+}
