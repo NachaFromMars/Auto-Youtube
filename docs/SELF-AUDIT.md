@@ -91,3 +91,31 @@
 - `delete-video`: chờ có video test cần xóa (hoặc anh Nấng cho phép xóa lealmted3Zw sau khi xem)
 - `reply-comment`: chờ có comment đầu tiên trên kênh
 - Schedule + thumbnail: chờ lần upload có --schedule/--thumbnail thật
+
+---
+
+# SELF-AUDIT v1.2.0 — Schedule + Delete + Reply + AUTO-REPLY (02/07/2026 03:35)
+
+## ✅ 3 MÓN CHỜ ĐIỀU KIỆN — ĐÃ EXERCISE THẬT HẾT
+| Món | Kết quả live |
+|---|---|
+| **upload --schedule** | ✅ Video test scheduled public 3/7/2026 20:00 THẬT — dialog "Video scheduled" chụp màn hình. Bug fix: Schedule là section collapse (#second-container-expand-button), KHÔNG phải radio; date Studio pre-fill sẵn, time pick từ dropdown 15' |
+| **delete-video --confirm** | ✅ Xóa vĩnh viễn video test THẬT — flow đúng: edit page → #overflow-menu-button → "Delete" → checkbox → "Delete forever" → verify redirect. List sau xóa còn đúng 1 video |
+| **reply-comment** | ✅ Reply THẬT đã đăng lên comment thật. Bug fix: nút "Reply" đầu thread chỉ MỞ box; submit thật là nút "Reply" sau "Cancel" → thêm verify reply xuất hiện trong thread |
+
+## 🆕 AUTO-REPLY ENGINE (lệnh `auto-reply`)
+- Quét inbox → classify 6 loại (praise/question/request/spam/negative/generic) → reply template pool thông minh
+- ✅ Verified: classify đúng comment thật ("tâm an" → praise), own-channel skip đúng, dry-run chuẩn
+- An toàn: spam/negative CHỈ FLAG không reply; dedupe state chống reply trùng; cap max-replies; gap 8-20s human-like
+- 7 unit tests classify/pick/fingerprint PASS
+
+## 🐛 BUG DOM THẬT BẮT TRONG v1.2 (4 cái)
+1. Schedule = collapsed section, không phải radio
+2. Delete: hover menu content page không render qua JS → dùng Options menu edit page
+3. Comments inbox: filter chip "Unresponded" mặc định ẩn comment → gỡ chip khi load
+4. Reply submit: 2 nút "Reply" khác nhau (mở box vs submit) → chọn nút sau "Cancel"
+
+## 🧪 22/22 tests PASS | Quota: 2/50 (1 video đã xóa, còn 1 video thiền)
+
+## KẾT LUẬN v1.2
+Toàn bộ vòng đời video đã verify THẬT end-to-end: upload → schedule → edit → comment → reply → auto-reply → delete. Không còn tính năng nào "code sẵn chờ điều kiện" trong core flow.
