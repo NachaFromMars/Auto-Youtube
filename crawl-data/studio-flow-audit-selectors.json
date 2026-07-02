@@ -1,0 +1,62 @@
+{
+  "create_button": {
+    "found": "[aria-label*='Create']",
+    "count": 2
+  },
+  "upload_menu": {
+    "found": null,
+    "count": 0
+  },
+  "file_input": {
+    "found": null,
+    "count": 0
+  },
+  "title_box": {
+    "found": null,
+    "count": 0
+  },
+  "desc_box": {
+    "found": null,
+    "count": 0
+  },
+  "kids_yes": {
+    "found": null,
+    "count": 0
+  },
+  "kids_no": {
+    "found": null,
+    "count": 0
+  },
+  "show_more": {
+    "found": null,
+    "count": 0
+  },
+  "next_button": {
+    "found": null,
+    "count": 0
+  },
+  "vis_private": {
+    "found": null,
+    "count": 0
+  },
+  "vis_unlisted": {
+    "found": null,
+    "count": 0
+  },
+  "vis_public": {
+    "found": null,
+    "count": 0
+  },
+  "schedule_radio": {
+    "found": null,
+    "count": 0
+  },
+  "done_button": {
+    "found": null,
+    "count": 0
+  },
+  "video_url_link": {
+    "found": null,
+    "count": 0
+  }
+}
