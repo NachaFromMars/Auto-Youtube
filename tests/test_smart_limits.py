@@ -106,3 +106,40 @@ def test_optimize_seo_no_duplicate_hashtags():
     desc = "đã có #thiền rồi"
     r = optimizer.optimize_seo("Thiền tĩnh tâm", desc, [], is_short=False)
     assert r["description"].lower().count("#thiền") == 1
+
+
+# ---- v1.2: autoreply tests ----
+from auto_youtube.core import autoreply  # noqa: E402
+
+
+def test_classify_praise():
+    assert autoreply.classify("Video hay quá, cảm ơn ad 🙏") == "praise"
+
+
+def test_classify_spam():
+    assert autoreply.classify("Vào kênh mình sub cheo nhé https://spam.link") == "spam"
+
+
+def test_classify_question():
+    assert autoreply.classify("Nhạc này tên là gì vậy ạ?") == "question"
+
+
+def test_classify_negative():
+    assert autoreply.classify("Video reup, báo cáo") == "negative"
+
+
+def test_classify_generic():
+    assert autoreply.classify("hello mọi người") == "generic"
+
+
+def test_pick_reply_no_repeat():
+    st = {}
+    a = autoreply.pick_reply("praise", st)
+    b = autoreply.pick_reply("praise", st)
+    assert a != b  # không lặp câu vừa dùng
+
+
+def test_fingerprint_stable():
+    f1 = autoreply._fingerprint("@user", "same text here")
+    f2 = autoreply._fingerprint("@user", "same text here")
+    assert f1 == f2 and len(f1) == 16
