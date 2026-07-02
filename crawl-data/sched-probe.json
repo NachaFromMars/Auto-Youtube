@@ -1,0 +1,43 @@
+{
+  "radios": [
+    {
+      "name": "VIDEO_MADE_FOR_KIDS_MFK",
+      "id": ""
+    },
+    {
+      "name": "VIDEO_MADE_FOR_KIDS_NOT_MFK",
+      "id": ""
+    },
+    {
+      "name": "VIDEO_AGE_RESTRICTION_SELF",
+      "id": ""
+    },
+    {
+      "name": "VIDEO_AGE_RESTRICTION_NONE",
+      "id": ""
+    },
+    {
+      "name": "PRIVATE",
+      "id": "private-radio-button"
+    },
+    {
+      "name": "UNLISTED",
+      "id": ""
+    },
+    {
+      "name": "PUBLIC",
+      "id": ""
+    }
+  ],
+  "schedLeaf": [
+    {
+      "tag": "P",
+      "id": "visibility-title",
+      "cls": "style-scope ytcp-video-visibility-select"
+    }
+  ],
+  "expandBtns": [
+    "first-container-expand-button",
+    "second-container-expand-button"
+  ]
+}
