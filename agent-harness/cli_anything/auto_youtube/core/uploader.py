@@ -61,57 +61,87 @@ def resume_controller():
 
 
 def _fill_schedule(page, schedule_iso):
-    """Điền datepicker + time cho schedule. schedule_iso: 'YYYY-MM-DDTHH:MM' (giờ VN).
-    Studio hiển thị theo timezone account — account này đặt giờ VN."""
+    """Điền schedule trên Visibility step. schedule_iso: 'YYYY-MM-DDTHH:MM' (giờ VN;
+    Studio hiển thị theo timezone account).
+
+    DOM verified live 02/07/2026 (video sDTHTxLdLPM):
+    - Schedule là section COLLAPSED → phải click #second-container-expand-button trước
+    - Expand xong: #datepicker-trigger (date dropdown) + input value 'HH:MM' (time)
+    - Time: click input → dropdown tp-yt-paper-item chứa giờ 15' → pick; fallback gõ
+    """
     from datetime import datetime as _dt
     try:
         dt = _dt.fromisoformat(schedule_iso.replace("Z", ""))
     except ValueError:
         return {"ok": False, "reason": f"schedule_iso không hợp lệ: {schedule_iso}"}
-    date_str = dt.strftime("%d/%m/%Y")   # dạng phổ biến; fallback M/D/YYYY bên dưới
-    date_str_us = dt.strftime("%b %-d, %Y") if hasattr(dt, 'strftime') else date_str
     time_str = dt.strftime("%H:%M")
+    # dạng Studio EN: '3 Jul 2026'
+    date_variants = [dt.strftime("%d %b %Y").lstrip("0"), dt.strftime("%b %d, %Y"),
+                     dt.strftime("%d/%m/%Y")]
     out = {}
-    # 1) mở date dropdown
+    # 0) expand Schedule section (bắt buộc — bug học live 02/07)
     try:
-        trig = page.locator(
-            "#datepicker-trigger, ytcp-text-dropdown-trigger#datepicker-trigger").first
+        exp = page.locator("#second-container-expand-button").first
+        exp.wait_for(state="visible", timeout=8000)
+        exp.click()
+        page.wait_for_timeout(2000)
+        out["expand"] = "EXPANDED"
+    except Exception as e:
+        out["expand"] = f"FAIL:{str(e)[:60]}"
+    # 1) date — mặc định Studio pre-fill ngày mai; chỉ sửa nếu khác target
+    try:
+        trig = page.locator("#datepicker-trigger").first
         trig.wait_for(state="visible", timeout=8000)
-        trig.click()
-        page.wait_for_timeout(1200)
-        di = page.locator("tp-yt-paper-dialog input, ytcp-date-picker input").first
-        di.wait_for(state="visible", timeout=6000)
-        di.click()
-        page.keyboard.press("Control+A")
-        for fmt in (date_str_us, date_str):
-            try:
-                di.fill(fmt)
-                page.keyboard.press("Enter")
-                out["date"] = f"FILLED:{fmt}"
-                break
-            except Exception:
-                continue
-        page.wait_for_timeout(800)
+        current = (trig.text_content() or "").strip()
+        want = date_variants[0]
+        if want.lower() not in current.lower():
+            trig.click()
+            page.wait_for_timeout(1500)
+            di = page.locator("tp-yt-paper-dialog input, ytcp-date-picker input").first
+            di.wait_for(state="visible", timeout=6000)
+            di.click()
+            page.keyboard.press("Control+A")
+            filled = False
+            for fmt in date_variants:
+                try:
+                    di.fill(fmt)
+                    page.keyboard.press("Enter")
+                    out["date"] = f"FILLED:{fmt}"
+                    filled = True
+                    break
+                except Exception:
+                    continue
+            if not filled:
+                out["date"] = "FILL_FAILED"
+            page.wait_for_timeout(1000)
+        else:
+            out["date"] = f"ALREADY:{current}"
     except Exception as e:
         out["date"] = f"FAIL:{str(e)[:80]}"
-    # 2) time input
+    # 2) time — input hiển thị value HH:MM (verified: không có id riêng)
     try:
-        ti = page.locator(
-            "#time-of-day-trigger input, ytcp-form-input-container#time-of-day-container input, input#time-of-day").first
-        ti.wait_for(state="visible", timeout=6000)
-        ti.click()
-        page.wait_for_timeout(800)
-        # dropdown list giờ — chọn item khớp; fallback gõ trực tiếp
-        item = page.locator(f"tp-yt-paper-item:has-text('{time_str}')").first
-        try:
-            item.wait_for(state="visible", timeout=4000)
-            item.click()
-            out["time"] = f"PICKED:{time_str}"
-        except Exception:
-            page.keyboard.press("Control+A")
-            ti.fill(time_str)
-            page.keyboard.press("Enter")
-            out["time"] = f"TYPED:{time_str}"
+        picked = page.evaluate("""((t)=>{
+          const inp=[...document.querySelectorAll('input')]
+            .find(i=>i.offsetParent!==null&&/^\\d\\d:\\d\\d$/.test(i.value||''));
+          if(!inp) return 'NO_TIME_INPUT';
+          inp.focus(); inp.click();
+          return 'FOCUSED';
+        })(0)""")
+        page.wait_for_timeout(1500)
+        picked = page.evaluate("""((t)=>{
+          const items=[...document.querySelectorAll('tp-yt-paper-item')].filter(e=>e.offsetParent!==null);
+          const hit=items.find(i=>(i.textContent||'').trim()===t);
+          if(hit){hit.click(); return 'PICKED:'+t;}
+          const inp=[...document.querySelectorAll('input')]
+            .find(i=>i.offsetParent!==null&&/^\\d\\d:\\d\\d$/.test(i.value||''));
+          if(!inp) return 'NO_INPUT';
+          inp.value=t;
+          inp.dispatchEvent(new InputEvent('input',{bubbles:true}));
+          inp.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+          inp.blur();
+          return 'TYPED:'+t;
+        })(%s)""" % json.dumps(time_str))
+        out["time"] = picked
     except Exception as e:
         out["time"] = f"FAIL:{str(e)[:80]}"
     return out
@@ -273,11 +303,12 @@ def upload(video_path, title, description="", tags=None, made_for_kids=None,
 
             # 6) Visibility
             if vis == "scheduled" and schedule_iso:
-                sr = _first(page, studio.SELECTORS["schedule_radio"], timeout=8000)
-                if sr:
-                    hm.human_click(page, sr, "schedule")
-                    page.wait_for_timeout(1500)
-                    _fill_schedule(page, schedule_iso)
+                # verified live 02/07: KHÔNG có radio SCHEDULE — Schedule là section
+                # collapse; _fill_schedule tự expand + điền date/time
+                sched_res = _fill_schedule(page, schedule_iso)
+                result["schedule_fill"] = sched_res
+                if isinstance(sched_res, dict) and str(sched_res.get("time", "")).startswith(("PICKED", "TYPED")) is False:
+                    _shot(page, "schedule-warn")
             else:
                 vkey = {"public": "vis_public", "unlisted": "vis_unlisted"}.get(vis, "vis_private")
                 vname = {"public": "PUBLIC", "unlisted": "UNLISTED"}.get(vis, "PRIVATE")
