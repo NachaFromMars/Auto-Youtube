@@ -1,14 +1,20 @@
 {
   "day": "2026-07-02",
   "uploads": [
-    1782950992.686207
+    1782950992.686207,
+    1782954258.22621
   ],
-  "count": 1,
+  "count": 2,
   "log": [
     {
       "ts": "2026-07-02T07:09:52.686233+07:00",
       "video_id": "lealmted3Zw",
       "title": "Thiền Định Tọa Sen — 60 Giây An Trú Giữa Hồ Sen 🧘🪷"
+    },
+    {
+      "ts": "2026-07-02T08:04:18.226224+07:00",
+      "video_id": "sDTHTxLdLPM",
+      "title": "Schedule Test — Auto-Youtube v1.1"
     }
   ]
 }
