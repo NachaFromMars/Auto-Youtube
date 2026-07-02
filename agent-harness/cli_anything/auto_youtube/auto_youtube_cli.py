@@ -11,8 +11,8 @@ import sys
 
 import click
 
-from .core import (analytics, comments, limits, manager, optimizer, session,
-                   smart, studio, uploader)
+from .core import (analytics, autoreply, comments, limits, manager, optimizer,
+                   session, smart, studio, uploader)
 
 
 def emit(data, as_json=True):
@@ -35,7 +35,7 @@ def cli(ctx, as_json):
               "commands": ["status", "login-check", "audit-studio", "smart-plan",
                            "upload", "list-videos", "video-info", "edit-video",
                            "delete-video", "report", "channel-stats", "video-stats",
-                           "optimize", "best-time", "comments", "reply-comment",
+                           "optimize", "best-time", "comments", "reply-comment", "auto-reply",
                            "limit-status"],
               "hard_cap_per_day": limits.MAX_UPLOADS_PER_DAY})
 
@@ -243,6 +243,25 @@ def reply_comment_cmd(index, text):
     """Reply comment theo index trong inbox."""
     try:
         res = comments.reply_comment(session, index, text)
+        emit(res)
+        if not res.get("ok"):
+            sys.exit(3)
+    except (session.ControllerError, RuntimeError) as e:
+        emit({"ok": False, "error": str(e)})
+        sys.exit(1)
+
+@cli.command("auto-reply")
+@click.option("--limit", default=20, show_default=True, help="Số comment quét")
+@click.option("--max-replies", default=20, show_default=True)
+@click.option("--dry-run", is_flag=True, help="Chỉ xem plan, KHÔNG reply thật")
+@click.option("--channel-handle", default=None,
+              help="Handle chủ kênh (vd @BanTangTocDai) để bỏ qua comment tự đăng")
+def auto_reply_cmd(limit, max_replies, dry_run, channel_handle):
+    """AUTO-REPLY: quét inbox → phân loại (khen/hỏi/request/spam) → reply thông minh.
+    Spam/negative chỉ flag, KHÔNG reply. Chống reply trùng qua state file."""
+    try:
+        res = autoreply.run(session, limit=limit, max_replies=max_replies,
+                            dry_run=dry_run, channel_handle=channel_handle)
         emit(res)
         if not res.get("ok"):
             sys.exit(3)
