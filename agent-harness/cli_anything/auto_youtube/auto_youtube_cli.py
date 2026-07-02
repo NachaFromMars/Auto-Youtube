@@ -11,7 +11,8 @@ import sys
 
 import click
 
-from .core import session, limits, smart, studio, uploader
+from .core import (analytics, comments, limits, manager, optimizer, session,
+                   smart, studio, uploader)
 
 
 def emit(data, as_json=True):
@@ -30,9 +31,12 @@ def cli(ctx, as_json):
     ctx.ensure_object(dict)
     ctx.obj["json"] = as_json
     if ctx.invoked_subcommand is None:
-        emit({"name": "auto-youtube", "ready": True,
+        emit({"name": "auto-youtube", "version": "1.1.0", "ready": True,
               "commands": ["status", "login-check", "audit-studio", "smart-plan",
-                           "upload", "list-videos", "limit-status", "set-channel"],
+                           "upload", "list-videos", "video-info", "edit-video",
+                           "delete-video", "report", "channel-stats", "video-stats",
+                           "optimize", "best-time", "comments", "reply-comment",
+                           "limit-status"],
               "hard_cap_per_day": limits.MAX_UPLOADS_PER_DAY})
 
 
@@ -127,21 +131,124 @@ def upload_cmd(video_path, title, description, tags, kids, visibility, schedule,
 @cli.command("list-videos")
 @click.option("--limit", default=20, show_default=True)
 def list_videos(limit):
-    """Liệt kê video trên kênh (đọc Studio content page). Cần qua verification."""
+    """Liệt kê video trên kênh: id, title, visibility, views, date."""
     try:
-        cid = session.evaluate("(window.ytcfg&&ytcfg.get&&ytcfg.get('CHANNEL_ID'))||''").get("value", "")
-        r = session.goto(f"{studio.STUDIO_URL}/channel/{cid}/videos/upload", wait_ms=7000, name="list-videos")
-        if "studio.youtube.com" not in r.get("url", ""):
-            emit({"ok": False, "blocked": True, "reason": "Studio chưa mở (verification)"})
-            sys.exit(2)
-        js = """() => Array.from(document.querySelectorAll('#video-title, a#video-title'))
-                 .slice(0, %d).map(e => ({title: e.textContent.trim(), href: e.href||null}))""" % limit
-        vids = session.evaluate(js).get("value", [])
-        emit({"ok": True, "channel_id": cid, "count": len(vids), "videos": vids})
-    except session.ControllerError as e:
+        emit(manager.list_videos(session, limit=limit))
+    except (session.ControllerError, RuntimeError) as e:
         emit({"ok": False, "error": str(e)})
         sys.exit(1)
 
+@cli.command("video-info")
+@click.option("--id", "video_id", required=True)
+def video_info(video_id):
+    """Chi tiết 1 video: title, desc, kids, visibility, draft-state."""
+    try:
+        emit(manager.get_video(session, video_id))
+    except (session.ControllerError, RuntimeError) as e:
+        emit({"ok": False, "error": str(e)})
+        sys.exit(1)
+
+@cli.command("edit-video")
+@click.option("--id", "video_id", required=True)
+@click.option("--title", default=None)
+@click.option("--description", default=None)
+@click.option("--visibility", type=click.Choice(["private", "unlisted", "public"]),
+              default=None)
+def edit_video(video_id, title, description, visibility):
+    """Sửa title/description/visibility video đã up (verify sau khi save)."""
+    if title is None and description is None and visibility is None:
+        emit({"ok": False, "reason": "cần ít nhất 1 trong --title/--description/--visibility"})
+        sys.exit(1)
+    try:
+        emit(manager.edit_video(session, video_id, title=title,
+                                description=description, visibility=visibility))
+    except (session.ControllerError, RuntimeError) as e:
+        emit({"ok": False, "error": str(e)})
+        sys.exit(1)
+
+@cli.command("delete-video")
+@click.option("--id", "video_id", required=True)
+@click.option("--confirm", is_flag=True, help="BẮT BUỘC để xóa thật (destructive)")
+def delete_video(video_id, confirm):
+    """XÓA video vĩnh viễn. Destructive — yêu cầu --confirm."""
+    try:
+        res = manager.delete_video(session, video_id, confirm=confirm)
+        emit(res)
+        if not res.get("ok"):
+            sys.exit(3)
+    except (session.ControllerError, RuntimeError) as e:
+        emit({"ok": False, "error": str(e)})
+        sys.exit(1)
+
+@cli.command("channel-stats")
+def channel_stats():
+    """Số liệu kênh từ Studio Analytics (không tốn quota API)."""
+    try:
+        emit(analytics.channel_overview(session))
+    except (session.ControllerError, RuntimeError) as e:
+        emit({"ok": False, "error": str(e)})
+        sys.exit(1)
+
+@cli.command("video-stats")
+@click.option("--id", "video_id", required=True)
+def video_stats_cmd(video_id):
+    """Số liệu 1 video từ analytics."""
+    try:
+        emit(analytics.video_stats(session, video_id))
+    except (session.ControllerError, RuntimeError) as e:
+        emit({"ok": False, "error": str(e)})
+        sys.exit(1)
+
+@cli.command("report")
+@click.option("--limit", default=10, show_default=True, help="Số video trong báo cáo")
+def report_cmd(limit):
+    """Báo cáo tổng hợp kênh: overview + dashboard + video list."""
+    try:
+        emit(analytics.report(session, manager, limit=limit))
+    except (session.ControllerError, RuntimeError) as e:
+        emit({"ok": False, "error": str(e)})
+        sys.exit(1)
+
+@cli.command("optimize")
+@click.option("--title", required=True)
+@click.option("--description", default="")
+@click.option("--tags", default="", help="comma-separated")
+@click.option("--short", is_flag=True)
+def optimize_cmd(title, description, tags, short):
+    """Gói tối ưu SEO: title + desc + hashtags + tags + giờ vàng + slot kế tiếp."""
+    tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+    emit(optimizer.optimize_seo(title, description, tag_list, is_short=short))
+
+@cli.command("best-time")
+@click.option("--kind", type=click.Choice(["short", "long"]), default="long",
+              show_default=True)
+def best_time_cmd(kind):
+    """Giờ vàng đăng bài hôm nay (giờ VN) + slot kế tiếp."""
+    emit({"today": optimizer.best_time(kind), "next_slot": optimizer.next_slot(kind)})
+
+@cli.command("comments")
+@click.option("--limit", default=15, show_default=True)
+def comments_cmd(limit):
+    """Đọc comment inbox mới nhất."""
+    try:
+        emit(comments.list_comments(session, limit=limit))
+    except (session.ControllerError, RuntimeError) as e:
+        emit({"ok": False, "error": str(e)})
+        sys.exit(1)
+
+@cli.command("reply-comment")
+@click.option("--index", required=True, type=int, help="Index từ lệnh comments")
+@click.option("--text", required=True)
+def reply_comment_cmd(index, text):
+    """Reply comment theo index trong inbox."""
+    try:
+        res = comments.reply_comment(session, index, text)
+        emit(res)
+        if not res.get("ok"):
+            sys.exit(3)
+    except (session.ControllerError, RuntimeError) as e:
+        emit({"ok": False, "error": str(e)})
+        sys.exit(1)
 
 if __name__ == "__main__":
     cli()
