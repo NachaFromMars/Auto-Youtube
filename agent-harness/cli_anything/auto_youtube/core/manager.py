@@ -217,43 +217,52 @@ def edit_video(session, video_id, title=None, description=None, visibility=None)
 
 
 def delete_video(session, video_id, confirm=False):
-    """XÓA video vĩnh viễn. destructive — chỉ chạy khi confirm=True."""
+    """XÓA video vĩnh viễn. destructive — chỉ chạy khi confirm=True.
+
+    Flow VERIFIED LIVE 02/07/2026 (xóa thật sDTHTxLdLPM):
+    edit page → #overflow-menu-button (Options) → item 'Delete' →
+    dialog: tick checkbox → nút 'Delete forever' → redirect về content page.
+    (Row hover-menu trên content page KHÔNG render nút qua JS — đã thử, fail.)
+    """
     if not confirm:
         return {"ok": False, "reason": "DESTRUCTIVE: cần --confirm để xóa video",
                 "video_id": video_id}
-    cid = _goto_content(session)
-    time.sleep(2)
-    # mở menu row của video -> Delete forever
-    js = """((vid)=>{
-      const rows=[...document.querySelectorAll('ytcp-video-row')];
-      const row=rows.find(r=>{const a=r.querySelector('a#video-title,#video-title');return a&&(a.href||'').includes(vid);});
-      if(!row) return 'ROW_NOT_FOUND';
-      const menu=row.querySelector('#hover-items ytcp-icon-button[icon*=more], ytcp-icon-button.ytcp-video-list-cell-actions, #hover-items ytcp-icon-button:last-of-type');
-      const anyBtn=menu||row.querySelector('ytcp-icon-button');
-      if(!anyBtn) return 'NO_MENU_BTN';
-      anyBtn.click(); return 'MENU_OPENED';
-    })(%s)""" % json.dumps(video_id)
-    step1 = session.evaluate(js).get("value")
+    r = session.goto(f"{studio.STUDIO_URL}/video/{video_id}/edit",
+                     wait_ms=10000, name=f"del-{video_id}")
+    if f"/video/{video_id}" not in r.get("url", ""):
+        return {"ok": False, "video_id": video_id,
+                "reason": "không mở được edit page (video không tồn tại?)",
+                "url": r.get("url", "")[:100]}
+    time.sleep(3)
+    step1 = session.evaluate("""(()=>{
+      const b=document.querySelector('#overflow-menu-button');
+      if(!b) return 'NO_OVERFLOW';
+      b.click(); return 'MENU_OPENED';
+    })()""").get("value")
     time.sleep(2)
     step2 = session.evaluate("""(()=>{
-      const items=[...document.querySelectorAll('tp-yt-paper-item, ytcp-text-menu tp-yt-paper-item')];
-      const del=items.find(i=>/delete forever|x\u00f3a v\u0129nh vi\u1ec5n/i.test(i.textContent||''));
-      if(!del) return 'NO_DELETE_ITEM:'+items.map(i=>(i.textContent||'').trim().slice(0,20)).join('|').slice(0,120);
+      const items=[...document.querySelectorAll('tp-yt-paper-item')].filter(e=>e.offsetParent!==null);
+      const del=items.find(i=>/^\\s*Delete\\s*$/i.test((i.textContent||'').trim()));
+      if(!del) return 'NO_DELETE_ITEM:'+items.map(i=>(i.textContent||'').trim().slice(0,20)).join('|').slice(0,100);
       del.click(); return 'DELETE_CLICKED';
     })()""").get("value")
-    time.sleep(2)
+    time.sleep(3)
     step3 = session.evaluate("""(()=>{
-      const cb=document.querySelector('ytcp-checkbox-lit, tp-yt-paper-checkbox, #confirm-checkbox');
-      if(cb) cb.click();
-      return cb?'CHECKBOX_TICKED':'NO_CHECKBOX';
+      const cb=[...document.querySelectorAll('ytcp-checkbox-lit, tp-yt-paper-checkbox, input[type=checkbox]')].filter(e=>e.offsetParent!==null);
+      if(cb.length){cb[0].click(); return 'CHECKBOX_TICKED';}
+      return 'NO_CHECKBOX';
     })()""").get("value")
-    time.sleep(1)
+    time.sleep(1.5)
     step4 = session.evaluate("""(()=>{
-      const btns=[...document.querySelectorAll('ytcp-button, button')];
-      const d=btns.find(b=>/delete forever|x\u00f3a v\u0129nh vi\u1ec5n/i.test(b.textContent||'')&&!b.hasAttribute('disabled'));
+      const btns=[...document.querySelectorAll('ytcp-button, button')].filter(b=>b.offsetParent!==null);
+      const d=btns.find(b=>/delete forever/i.test((b.textContent||'').trim())&&!b.hasAttribute('disabled'));
       if(!d) return 'NO_CONFIRM_BTN';
       d.click(); return 'DELETED';
     })()""").get("value")
-    time.sleep(3)
-    return {"ok": step4 == "DELETED", "video_id": video_id,
+    time.sleep(6)
+    # verify: redirect khỏi edit page = xóa thành công
+    href = session.evaluate("location.href").get("value") or ""
+    gone = f"/video/{video_id}" not in href
+    return {"ok": step4 == "DELETED" and gone, "video_id": video_id,
+            "verified_gone": gone,
             "steps": {"menu": step1, "item": step2, "checkbox": step3, "confirm": step4}}
