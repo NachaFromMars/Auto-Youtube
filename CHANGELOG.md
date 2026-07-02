@@ -3,6 +3,18 @@
 All notable changes to Auto-Youtube are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.0] - 2026-07-02
+
+### Added
+- **Auto-Reply engine** (`core/autoreply.py` + `auto-reply` command): scans comment inbox, classifies (praise/question/request/spam/negative/generic), replies from smart template pool (no immediate repeats), skips own-channel comments, flags spam/negative WITHOUT replying, dedupe state file prevents double-reply, human-like 8-20s gaps, `--dry-run` + `--max-replies` caps.
+- 7 autoreply tests (22 total).
+
+### Fixed (verified live 02/07)
+- **Schedule flow**: Studio has NO "SCHEDULE" radio — it's a collapsed section; `_fill_schedule` now clicks `#second-container-expand-button`, verifies pre-filled date, picks time from 15-min dropdown. Verified real: video scheduled public 3 Jul 2026 20:00.
+- **delete-video**: content-page hover menu doesn't render via JS; correct flow is edit-page `#overflow-menu-button` → "Delete" → checkbox → "Delete forever" + redirect verify. Verified real deletion.
+- **comments inbox**: default "Unresponded" filter chip hides replied/own comments → chip removed on load; `list_comments` now sees all.
+- **reply-comment submit**: thread-level "Reply" button only OPENS the box; real submit is the "Reply" button after "Cancel" → fixed + post-submit verify. Verified real reply posted.
+
 ## [1.1.0] - 2026-07-02
 
 ### Added — Full-stack manager (all verified LIVE on real Studio)
