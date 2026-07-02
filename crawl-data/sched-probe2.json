@@ -1,0 +1,40 @@
+{
+  "dateTrigger": true,
+  "inputs": [
+    {
+      "id": "query-input",
+      "ph": "Search across your channel",
+      "val": "",
+      "cls": "style-scope ytcp-omnisearch"
+    },
+    {
+      "id": "",
+      "ph": "",
+      "val": "00:00",
+      "cls": "style-scope tp-yt-paper-input"
+    }
+  ],
+  "timeInput": false,
+  "trigs": [
+    {
+      "id": null,
+      "txt": "Select"
+    },
+    {
+      "id": "subtitles-editor-link",
+      "txt": "Subtitles"
+    },
+    {
+      "id": "endscreen-editor-link",
+      "txt": "End screen"
+    },
+    {
+      "id": "info-cards-editor-link",
+      "txt": "Cards"
+    },
+    {
+      "id": "datepicker-trigger",
+      "txt": "3 Jul 2026"
+    }
+  ]
+}
