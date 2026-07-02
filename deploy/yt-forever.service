@@ -1,0 +1,19 @@
+[Unit]
+Description=YouTube Forever Login Keeper (Auto-Youtube) - minhfrommars profile
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/.openclaw/workspace
+# FIFO holder: giữ stdin của controller mở; keeper tự chạy controller + auto-restart
+ExecStartPre=/bin/bash -c 'rm -f /root/.openclaw/workspace/.yt_ctrl_fifo; mkfifo /root/.openclaw/workspace/.yt_ctrl_fifo'
+ExecStartPre=/bin/bash -c 'setsid bash -c "exec 3>/root/.openclaw/workspace/.yt_ctrl_fifo; while true; do sleep 3600; done" >/dev/null 2>&1 < /dev/null &'
+ExecStart=/bin/bash /root/.openclaw/workspace/yt-forever-keeper.sh
+Restart=always
+RestartSec=10
+KillMode=control-group
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

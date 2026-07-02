@@ -1,0 +1,28 @@
+{
+  "accounts": [
+    {
+      "id": "minhfrommars",
+      "email": "minhfrommars@gmail.com",
+      "authuser": 0,
+      "channel_id": "UCQOb70ar5EgoD4rtIjvS0fg",
+      "channel_name": "From Mars Minh",
+      "proxy": null,
+      "enabled": true,
+      "note": "acc gốc, đã verify studio"
+    },
+    {
+      "id": "tanso_nacha",
+      "email": "tanso.nacha@gmail.com",
+      "authuser": 1,
+      "channel_id": "UCLuHAuQGklSW1AjpykHNScA",
+      "channel_name": "Official Nacha",
+      "proxy": null,
+      "enabled": true,
+      "note": "acc thứ 2, thêm 02/07 để xoay"
+    }
+  ],
+  "rotation": {
+    "strategy": "round_robin",
+    "cursor": 1
+  }
+}
