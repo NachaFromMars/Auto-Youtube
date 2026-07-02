@@ -23,6 +23,6 @@
   ],
   "rotation": {
     "strategy": "round_robin",
-    "cursor": 1
+    "cursor": 0
   }
 }
