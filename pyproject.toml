@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "auto-youtube"
-version = "1.1.0"
+version = "1.2.0"
 description = "Agent-native YouTube automation CLI — HumanMode + Playwright, quota-free, 50/day hard cap"
 readme = "README.md"
 license = { text = "MIT" }
