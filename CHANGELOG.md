@@ -3,6 +3,25 @@
 All notable changes to Auto-Youtube are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.0] - 2026-07-02
+
+### Added — Full-stack manager (all verified LIVE on real Studio)
+- **Manager** (`core/manager.py`): `list-videos` (Videos + Shorts tabs, id/title/visibility/views/date), `video-info` (title/desc/kids/visibility/draft-state), `edit-video` (title/description/visibility with post-save verify), `delete-video` (destructive, requires `--confirm`).
+- **Analytics** (`core/analytics.py`): `channel-stats` (key metrics + realtime subscribers/views-48h), `video-stats`, `report` (overview + dashboard + video list one-shot).
+- **Comments** (`core/comments.py`): `comments` (inbox reader), `reply-comment` (by index).
+- **Optimizer** (`core/optimizer.py`, pure Python): `optimize` (SEO bundle: title + hashtag-injected description + tags), `best-time` (VN golden hours per content type), `next_slot` (next golden slot ISO for scheduling).
+- **Uploader upgrades**: schedule datepicker fill (`_fill_schedule`), thumbnail upload for long videos, audience + visibility radio verify-with-retry (bug learned from first real upload).
+- 4 new optimizer tests (15 total).
+
+### Fixed (bugs found during first REAL upload, 2026-07-02)
+- `input[type=file]` is hidden in YouTube upload dialog → `_first()` now supports `state="attached"`.
+- Audience radio click not registering → video stuck in draft; now verified + JS-retried ×3 (same for visibility radios).
+- Analytics SPA renders slowly → wait bumped to 7s (verified threshold).
+- Content page: Shorts live in separate tab → list-videos scans Videos + Shorts tabs.
+
+### Verified end-to-end
+- First real upload: Shorts `lealmted3Zw` (unlisted) published successfully with rate-limit accounting (1/50).
+
 ## [1.0.0] - 2026-06-30
 
 ### Added
