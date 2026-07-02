@@ -1,0 +1,23 @@
+{
+  "url": "https://studio.youtube.com/channel/UCQOb70ar5EgoD4rtIjvS0fg/analytics/tab-overview/period-default",
+  "ytaTags": [
+    "yta-app",
+    "yta-overview-app",
+    "yta-screen",
+    "yta-time-picker",
+    "yta-personalized-overview-header",
+    "yta-section",
+    "yta-key-metric-card",
+    "yta-revshare-banner",
+    "yta-card-container",
+    "yta-key-metric-block",
+    "yta-column-anomaly-tooltip",
+    "yta-line-chart-base",
+    "yta-latest-activity-card",
+    "yta-title-subtitle-header",
+    "yta-pulsating-dot",
+    "yta-realtime-chart",
+    "yta-entity-thumbnail"
+  ],
+  "bodySnip": "if (window.ytcsi) {window.ytcsi.tick('ai', null, '');} Close Channel analytics Your account is at greater risk of attack because you don't have two-step verification. Turn it on now for extra security Get started Dismiss Skip navigation Create Account Your channel Cháu Dashboard Content Analytics Co"
+}
